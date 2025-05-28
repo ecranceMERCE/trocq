@@ -16,7 +16,7 @@ From elpi Require Import elpi.
 Require Import Hierarchy Stdlib Database Param_lemmas.
 
 From Trocq.Elpi Extra Dependency "class.elpi" as class.
-From Trocq.Elpi.generation Extra Dependency "param-type.elpi" as param_type_generation.
+From Trocq.Elpi.generation Extra Dependency "param-sort.elpi" as param_sort_generation.
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
@@ -31,20 +31,15 @@ Local Open Scope param_scope.
 Elpi Command genmaptype.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File class.
-Elpi Accumulate File param_type_generation.
+Elpi Accumulate File param_sort_generation.
 
 Elpi Query lp:{{
-  coq.univ.new U,
-  coq.univ.variable U L,
-  coq.univ.alg-super U U1,
-  % cannot have only one binder in the declaration because this line creates a fresh level:
-  coq.univ.variable U1 L1,
-  map-class.all-of-kind all Classes,
+  map-class.all-of-kind all AllClasses,
   map-class.all-of-kind low LowClasses,
   std.forall LowClasses (m\
-    std.forall Classes (n\
-      std.forall Classes (p\
-        generate-map-type m (pc n p) U L L1
+    std.forall AllClasses (n\
+      std.forall AllClasses (p\
+        generate-map-sort ttype m (pc n p)
       )
     )
   ).
@@ -52,7 +47,7 @@ Elpi Query lp:{{
 
 (* now R is always Param44.Rel *)
 
-(* NB: here we would like to use i+1 instead of j but Coq does not allow it
+(* NB: here we would like to use i+1 instead of j but Rocq does not allow it
  * Map*.Has is a constant so it currently cannot be instantiated with an algebraic universe
  *)
 
@@ -112,35 +107,58 @@ Proof.
     by rewrite uparam_equiv_id /= [path_universe_uncurried _] path_universe_1.
 Defined.
 
+Register Map2b_Type44 as trocq.map2b_type44.
+Register Map2b_Type_sym44 as trocq.map2b_type_sym44.
+Register Map3_Type44 as trocq.map3_type44.
+Register Map3_Type_sym44 as trocq.map3_type_sym44.
+Register Map4_Type44 as trocq.map4_type44.
+Register Map4_Type_sym44 as trocq.map4_type_sym44.
+
+Elpi Query lp:{{
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (
+    trocq.db.map-sort ttype map2b (pc map4 map4) {{:gref lib:trocq.map2b_type44}}
+  )),
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (
+    trocq.db.map-sym-sort ttype map2b (pc map4 map4) {{:gref lib:trocq.map2b_type_sym44}}
+  )),
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (
+    trocq.db.map-sort ttype map3 (pc map4 map4) {{:gref lib:trocq.map3_type44}}
+  )),
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (
+    trocq.db.map-sym-sort ttype map3 (pc map4 map4) {{:gref lib:trocq.map3_type_sym44}}
+  )),
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (
+    trocq.db.map-sort ttype map4 (pc map4 map4) {{:gref lib:trocq.map4_type44}}
+  )),
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (
+    trocq.db.map-sym-sort ttype map4 (pc map4 map4) {{:gref lib:trocq.map4_type_sym44}}
+  )).
+}}.
+
 Elpi Command genparamtype.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File class.
-Elpi Accumulate File param_type_generation.
+Elpi Accumulate File param_sort_generation.
 
 Elpi Query lp:{{
-  coq.univ.new U,
-  coq.univ.variable U L,
-  coq.univ.alg-super U U1,
-  % cannot have only one binder in the declaration because this line creates a fresh level:
-  coq.univ.variable U1 L1,
   map-class.all-of-kind all AllClasses,
-  map-class.all-of-kind low Classes__,
-  map-class.all-of-kind high Classes44,
-  std.forall Classes__ (m\
-    std.forall Classes__ (n\
+  map-class.all-of-kind low LowClasses,
+  map-class.all-of-kind high HighClasses,
+  std.forall LowClasses (m\
+    std.forall LowClasses (n\
       std.forall AllClasses (p\
         std.forall AllClasses (q\
-          generate-param-type (pc m n) (pc p q) U L L1
+          generate-param-sort ttype (pc m n) (pc p q)
         )
       )
     ),
-    std.forall Classes44 (n\
-      generate-param-type (pc m n) (pc map4 map4) U L L1
+    std.forall HighClasses (n\
+      generate-param-sort ttype (pc m n) (pc map4 map4)
     )
   ),
-  std.forall Classes44 (m\
+  std.forall HighClasses (m\
     std.forall AllClasses (n\
-      generate-param-type (pc m n) (pc map4 map4) U L L1
+      generate-param-sort ttype (pc m n) (pc map4 map4)
     )
   ).
 }}.

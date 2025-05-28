@@ -117,6 +117,7 @@ Definition sym_rel@{i} {A B : Type@{i}} (R : A -> B -> Type@{i}) := fun b a => R
 
 Import HoTTNotations.
 
+Register transport as trocq.transport.
 Register sym_rel as trocq.sym_rel.
 Register paths as trocq.paths.
 
@@ -127,6 +128,7 @@ Elpi Query lp:{{
   coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.pprop PProp)),
   {{:gref lib:trocq.weaken}} = const Weaken,
   coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.weaken Weaken)),
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.transport {{:gref lib:trocq.transport}})),
   coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.sym-rel {{:gref lib:trocq.sym_rel}})),
   coq.elpi.accumulate _ "trocq.db" (clause _ _ (pi UI\
     trocq.db.paths UI (global {{:gref lib:trocq.paths}})
