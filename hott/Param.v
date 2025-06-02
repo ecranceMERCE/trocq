@@ -15,7 +15,7 @@ From elpi Require Import elpi.
 Require Import ssreflect.
 Require Export Database.
 Require Import Hierarchy.
-Require Export Param_Type Param_arrow Param_forall.
+Require Export Param_sort Param_arrow Param_forall.
 
 From Trocq.Elpi Extra Dependency "annot.elpi" as annot.
 From Trocq.Elpi Extra Dependency "util-rocq.elpi" as util_rocq.

@@ -1,0 +1,158 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                     Trocq                      %
+%  _______                   %        Copyright (C) 2023 Inria & MERCE        %
+% |__   __|                  %     (Mitsubishi Electric R&D Centre Europe)    %
+%    | |_ __ ___   ___ __ _  %        Cyril Cohen <cyril.cohen@inria.fr>      %
+%    | | '__/ _ \ / __/ _` | %        Enzo Crance <enzo.crance@inria.fr>      %
+%    | | | | (_) | (_| (_| | %    Assia Mahboubi <assia.mahboubi@inria.fr>    %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %   This file is distributed under the terms of  %
+%                        |_| %   GNU Lesser General Public License Version 3  %
+%                            % (see LICENSE file for the text of the license) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+pred generate-fields
+  i:map-class, i:term, i:param-class,
+  i:tsort,
+  i:univ, i:univ.variable, i:univ.variable,
+  o:list term.
+generate-fields map0 R _ _ _ _ _ [R].
+generate-fields map1 R _ Tsort U _ _ [R, Map] :-
+  Sort = sort {tsort->sort Tsort U},
+  Map = {{ fun (T: lp:Sort) => T }}.
+generate-fields map2a R RClass Tsort U L L1 [R, Map, MapInR] :-
+  Sort = sort {tsort->sort Tsort U},
+  Map = {{ fun (T: lp:Sort) => T }},
+
+  coq.univ-instance UI [L],
+  coq.univ-instance UI1 [L1],
+  coq.univ-instance UI11 [L1, L1],
+  Paths = {trocq.db.paths UI1},
+  Transport = pglobal {trocq.db.transport} UI11,
+  IdParam = pglobal (const {trocq.db.id-param RClass}) UI,
+  MapInR = {{
+    fun (A B: lp:Sort) (e: lp:Paths lp:Sort A B) =>
+      lp:Transport lp:Sort (lp:R A) A B e (lp:IdParam A)
+  }}.
+
+pred generate-map-sort i:tsort, i:map-class, i:param-class.
+generate-map-sort Tsort M RClass :-
+  coq.univ.new U,
+  coq.univ.variable U L,
+  coq.univ.alg-super U U1,
+  coq.univ.variable U1 L1,
+
+  Sort = sort {tsort->sort Tsort U},
+
+  trocq.db.rel RClass RGR _ _ _ _,
+  coq.univ-instance UI [L],
+  R = pglobal RGR UI,
+
+  generate-fields M R RClass Tsort U L L1 Fields,
+
+  coq.univ-instance UI1 [L1],
+  SymRel = pglobal {trocq.db.sym-rel} UI1,
+
+  generate-fields
+    M {{ lp:SymRel lp:Sort lp:Sort lp:R }}
+    RClass Tsort U L L1 FieldsSym,
+
+  coq.locate {calc ("Map" ^ {map-class.to_string M} ^ ".BuildHas")} BuildHasGR,
+  BuildHas = pglobal BuildHasGR UI1,
+
+  Decl = app [BuildHas, Sort, Sort | Fields],
+  DeclSym = app [BuildHas, Sort, Sort | FieldsSym],
+
+  (@keepunivs! ==>
+    std.assert-ok! (coq.elaborate-skeleton Decl _Ty Decl')
+      "generate-map-sort: Decl cannot be elaborated",
+    std.assert-ok! (coq.elaborate-skeleton DeclSym _Ty' DeclSym')
+      "generate-map-sort: DeclSym cannot be elaborated"
+  ),
+
+  @udecl! [L, L1] ff [] tt ==>
+    MapSort is
+      "Map" ^ {map-class.to_string M} ^ "_" ^ {tsort->name Tsort} ^ {param-class.to_string RClass},
+    coq.env.add-const MapSort Decl' _ @transparent! Const,
+    coq.elpi.accumulate _ "trocq.db" (clause _ _ (
+      trocq.db.map-sort Tsort M RClass (const Const)
+    )),
+
+    MapSortSym is
+      "Map" ^ {map-class.to_string M} ^ "_" ^ {tsort->name Tsort} ^ "_sym" ^
+      {param-class.to_string RClass},
+    coq.env.add-const MapSortSym DeclSym' _ @transparent! ConstSym,
+    coq.elpi.accumulate _ "trocq.db" (clause _ _ (
+      trocq.db.map-sym-sort Tsort M RClass (const ConstSym)
+    )).
+
+pred generate-param-sort i:tsort, i:param-class, i:param-class.
+generate-param-sort Tsort (pc M N as Class) RClass :-
+  coq.univ.new U,
+  coq.univ.variable U L,
+  coq.univ.alg-super U U1,
+  coq.univ.variable U1 L1,
+
+  Sort = sort {tsort->sort Tsort U},
+
+  trocq.db.rel Class _ BuildRelGR _ _ _,
+  coq.univ-instance UI1 [L1],
+  BuildRel = pglobal BuildRelGR UI1,
+
+  trocq.db.map-sort Tsort M RClass MapSortGR,
+  trocq.db.map-sym-sort Tsort N RClass MapSortSymGR,
+  coq.univ-instance UI2 [L, L1],
+  MapSort = pglobal MapSortGR UI2,
+  MapSortSym = pglobal MapSortSymGR UI2,
+
+  trocq.db.rel RClass RGR _ _ _ _,
+  coq.univ-instance UI [L],
+  R = pglobal RGR UI,
+
+  if (std.mem! [map2b, map3, map4] M) (
+    UnivalentDeclM = true,
+    MapSortF = (univalence\ {{ lp:MapSort lp:univalence }})
+  ) (
+    UnivalentDeclM = false,
+    MapSortF = (_\ MapSort)
+  ),
+
+  if (std.mem! [map2b, map3, map4] N) (
+    UnivalentDeclN = true,
+    MapSortSymF = (univalence\ {{ lp:MapSortSym lp:univalence }})
+  ) (
+    UnivalentDeclN = false,
+    MapSortSymF = (_\ MapSortSym)
+  ),
+
+  % in the univalent case, add the axiom in the binder
+  if (UnivalentDeclM = true ; UnivalentDeclN = true) (
+    Univalence = global {trocq.db.univalence-type},
+
+    Decl = {{
+      fun (H: lp:Univalence) =>
+        lp:BuildRel lp:Sort lp:Sort
+          lp:R
+          lp:{{ MapSortF {{H}} }}
+          lp:{{ MapSortSymF {{H}} }}
+    }}
+  ) (
+    Decl = {{
+      lp:BuildRel lp:Sort lp:Sort
+        lp:R
+        lp:{{ MapSortF _ }}
+        lp:{{ MapSortSymF _ }}
+    }}
+  ),
+
+  (@keepunivs! => std.assert-ok!
+    (coq.elaborate-skeleton Decl _Ty Decl')
+    "generate-param-sort: Decl cannot be elaborated"
+  ),
+
+  @univpoly! ==>
+    ParamSort is "Param" ^ {param-class.to_string Class} ^ "_" ^ {tsort->name Tsort} ^ {param-class.to_string RClass},
+    coq.env.add-const ParamSort Decl' _ @transparent! Const,
+    coq.elpi.accumulate _ "trocq.db" (clause _ _ (
+      trocq.db.param-sort Tsort Class RClass Const
+    )).

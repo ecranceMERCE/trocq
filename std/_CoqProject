@@ -8,8 +8,7 @@ HoTTNotations.v
 Common.v
 Hierarchy.v
 Param.v
-Param_Prop.v
-Param_Type.v
+Param_sort.v
 Param_arrow.v
 Param_forall.v
 Param_lemmas.v

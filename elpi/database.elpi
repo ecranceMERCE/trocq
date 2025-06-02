@@ -52,8 +52,7 @@ pred id-param o:param-class, o:constant.
 % Given the class (M, N), obtain {{ParamMN_sym}}
 pred param-sym o:param-class, o:constant.
 
-pred ptype o:constant.
-pred pprop o:constant.
+pred psort o:tsort, o:gref.
 pred weaken o:constant.
 
 % remark: to allow for conditional polymorphicity, `paths` is a predicate
@@ -71,15 +70,23 @@ pred weaken o:constant.
 % univ-instance of size 0, 0 but was given an instance of size 0, 1".
 % Understand what's going on and use `coq.env.global` instead.
 pred paths i:univ-instance o:term.
+pred transport o:gref.
+pred univalence-type o:gref.
 pred sym-rel o:gref.
 
-pred ptype-or-pprop i:term, o:constant.
-ptype-or-pprop (pglobal (const PCst) _) PCst :- !,
-  (ptype PCst; pprop PCst).
+pred is-psort i:term, o:gref.
+is-psort (pglobal PCst _) PCst :- !,
+  sigma TSort\ psort TSort PCst.
 
-% param-type β α {{ Param(β)_Type(α) }}
+% map-sort Sort M α {{ Map(M)_(Sort)(α) }}
+pred map-sort i:tsort, o:map-class, o:param-class, o:gref.
+
+% map-sym-sort Sort M α {{ Map(M)_(Sort)_sym(α) }}
+pred map-sym-sort i:tsort, o:map-class, o:param-class, o:gref.
+
+% param-sort Sort β α {{ Param(β)_(Sort)(α) }}
 % with α the level of the R field, and β the structure given to it.
-pred param-type o:param-class, o:param-class, o:constant.
+pred param-sort i:tsort, o:param-class, o:param-class, o:constant.
 
 % pparam-type (M,N) {{ PParamTypeMN }}
 pred pparam-type o:param-class, o:constant.

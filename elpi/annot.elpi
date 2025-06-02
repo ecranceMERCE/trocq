@@ -22,18 +22,18 @@ coq.subst-fun Args F FArgs :- !, coq.mk-app F Args FArgs.
 % NB: the output type is term because the annotations are encoded directly in Coq
 % see PType in Param.v
 pred term->annot-term i:term, o:term.
-term->annot-term (app [pglobal (const PPropGR) _, M, N] as P) P :-
-  trocq.db.pprop PPropGR, !,
+term->annot-term (app [pglobal PPropGR _, M, N] as P) P :-
+  trocq.db.psort tprop PPropGR, !,
   cstr.univ-link _ M N.
-term->annot-term (app [pglobal (const PTypeGR) _, M, N] as P) P :-
-  trocq.db.ptype PTypeGR, !,
+term->annot-term (app [pglobal PTypeGR _, M, N] as P) P :-
+  trocq.db.psort ttype PTypeGR, !,
   cstr.univ-link _ M N.
-term->annot-term (sort prop) (app [PProp , M, N]) :-
-  trocq.db.pprop PPropGR, !,
-  coq.env.global (const PPropGR) PProp, !,
+term->annot-term (sort prop) (app [PProp, M, N]) :-
+  trocq.db.psort tprop PPropGR, !,
+  coq.env.global PPropGR PProp, !,
   cstr.univ-link _ M N.
-term->annot-term (sort (typ U)) (app [pglobal (const PTypeGR) UI, M, N]) :-
-  trocq.db.ptype PTypeGR, !,
+term->annot-term (sort (typ U)) (app [pglobal PTypeGR UI, M, N]) :-
+  trocq.db.psort ttype PTypeGR, !,
   coq.univ-instance UI [{coq.univ.variable U}],
   cstr.univ-link _ M N.
 term->annot-term (fun N T F) (fun N T' F') :- !,
@@ -66,8 +66,8 @@ typecheck T ATy :-
 % sub-typing predicate following the sub-typing rules in the article
 pred sub-type i:term, i:term.
 % SubSort
-sub-type (app [pglobal (const PType) _, M1, N1]) (app [pglobal (const PType) _, M2, N2]) :-
-  (trocq.db.ptype PType; trocq.db.pprop PType), !, std.do![
+sub-type (app [pglobal PType _, M1, N1]) (app [pglobal PType _, M2, N2]) :-
+  (trocq.db.psort ttype PType; trocq.db.psort tprop PType), !, std.do![
   cstr.univ-link C1 M1 N1,
   cstr.univ-link C2 M2 N2,
   cstr.geq C1 C2
@@ -90,8 +90,8 @@ sub-type X Y :- coq.error "annot.sub-type:" X "vs" Y.
 
 % syntactic term equality, taking care of adding annotation equalities in the constraint graph
 pred eq i:term, i:term.
-eq (app [pglobal (const PType) UI, M1, N1]) (app [pglobal (const PType) UI, M2, N2]) :-
-  (trocq.db.ptype PType; trocq.db.pprop PType), !,
+eq (app [pglobal PType UI, M1, N1]) (app [pglobal PType UI, M2, N2]) :-
+  (trocq.db.psort ttype PType; trocq.db.psort tprop PType), !,
   cstr.univ-link C1 M1 N1,
   cstr.univ-link C2 M2 N2,
   cstr.eq C1 C2.
@@ -121,7 +121,7 @@ classes T Cs' Out :- std.do! [
   )].
 
 pred all-classes i:term, o:list param-class.
-all-classes (app [PCst, M, N]) [C] :- trocq.db.ptype-or-pprop PCst _, !,
+all-classes (app [PCst, M, N]) [C] :- trocq.db.is-psort PCst _, !,
   cstr.univ-link C M N.
 all-classes X Cs :- (X = prod _ T F ; X = fun _ T F), !,
   pi x\ std.append {all-classes T} {all-classes (F x)} Cs.
@@ -132,7 +132,7 @@ all-classes X _ :- coq.error "all-classes:" X.
 
 % output class of a term
 pred out-class i:term, o:option param-class.
-out-class (app [PCst, M, N]) (some C) :- trocq.db.ptype-or-pprop PCst _, !,
+out-class (app [PCst, M, N]) (some C) :- trocq.db.is-psort PCst _, !,
   cstr.univ-link C M N.
 out-class (prod _ _ F) Out :- !, pi x\ out-class (F x) Out.
 out-class (fun _ _ _) none :- !.
