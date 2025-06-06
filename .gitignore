@@ -7,3 +7,4 @@
 *~
 .*.d
 **/Makefile.conf
+**/Makefile.coq

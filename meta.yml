@@ -73,6 +73,10 @@ supported_coq_versions:
   text: "8.20, 9.0"
   opam: '{>= "8.20" & < "9.1"}'
 
+make_target: "std"
+
+install_flag: "-C std"
+
 tested_coq_opam_versions:
 - version: '8.20, 9.0'
 

@@ -1,7 +1,7 @@
 {
     "name": "Trocq",
     "build": {
-        "dockerfile": "Dockerfile"
+        "dockerfile": "../Dockerfile"
     },
     "postAttachCommand": "make -j8 -k",
     "customizations": {

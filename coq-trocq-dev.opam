@@ -1,6 +1,3 @@
-# This file was generated from `meta.yml`, please do not edit manually.
-# Follow the instructions on https://github.com/coq-community/templates to regenerate.
-
 opam-version: "2.0"
 maintainer: "Enzo Crance <enzo.crance@inria.fr>"
 version: "dev"
@@ -37,11 +34,13 @@ The plugin is implemented in Coq-Elpi and the code of the
 parametricity translation is fairly close to a pen-and-paper
 sequent-style presentation."""
 
-build: [make "-j%{jobs}%" "std"]
-install: [make "-C std" "install"]
+build: [make "-j%{jobs}%"]
+install: [make "install"]
 depends: [
   "coq" {>= "8.20" & < "9.1"}
   "coq-elpi" {= "2.5.2"}
+  "coq-hott"
+  "coq-mathcomp-algebra"
 ]
 
 tags: [
